@@ -4,6 +4,17 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+// set up mongoose
+const mongoose = require('mongoose');
+const userName = ""; // TODO fill it in
+const password = ""; // TODO fill it in
+const mongoDB =
+  `mongodb://${userName}:${password}@ds243054.mlab.com:43054/local_library`;
+mongoose.connect(mongoDB, {useNewUrlParser: true});
+mongoose.Promise = global.Promise;
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
