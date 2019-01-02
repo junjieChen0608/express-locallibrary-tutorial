@@ -20,7 +20,7 @@ exports.genre_list = function(req, res) {
 exports.genre_detail = function(req, res, next) {
     async.parallel({
       genre: function(callback) {
-        Genr.findById(req.params.id)
+        Genre.findById(req.params.id)
               .exec(callback);
       },
 
