@@ -37,5 +37,19 @@ AuthorSchema
   return '/catalog/author/' + this._id;
 });
 
+// virtual for birth date
+AuthorSchema
+.virtual('date_of_birth_formatted')
+.get(function() {
+  return formatDate(this.date_of_birth);
+})
+
+// virtual for death date
+AuthorSchema
+.virtual('date_of_death_formatted')
+.get(function() {
+  return formatDate(this.date_of_death);
+})
+
 //Export model
 module.exports = mongoose.model('Author', AuthorSchema);
