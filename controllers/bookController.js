@@ -344,6 +344,7 @@ exports.book_update_post = [
                     book: book,
                     errors: errors.array()});
       });
+      return;
     } else {
       Book.findByIdAndUpdate(req.params.id, book, {}, function(err, thebook) {
         if (err) {
