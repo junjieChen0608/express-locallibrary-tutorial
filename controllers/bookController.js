@@ -228,11 +228,129 @@ exports.book_delete_post = function(req, res, next) {
 };
 
 // Display book update form on GET.
-exports.book_update_get = function(req, res) {
-    res.send('NOT IMPLEMENTED: Book update GET');
+exports.book_update_get = function(req, res, next) {
+    async.parallel({
+      book: function(callback) {
+        Book.findById(req.params.id)
+            .populate('author')
+            .populate('genre')
+            .exec(callback);
+      },
+
+      authors: function(callback) {
+        Author.find(callback);
+      },
+
+      genres: function(callback) {
+        Genre.find(callback);
+      },
+    }, function(err, results) {
+      if (err) {
+        return next(err);
+      }
+
+      if (results.book == null) {
+        var err = new Error('Book not found');
+        err.status = 404;
+        return next(err);
+      }
+
+      //mark selected genres as checked
+      const allGenresLen = results.genres.length;
+      const bookGenresLen = results.book.genre.length;
+
+      for (let all_g_iter = 0; all_g_iter < allGenresLen; all_g_iter++) {
+        for (let book_g_iter = 0; book_g_iter < bookGenresLen; book_g_iter++) {
+          if (results.genres[all_g_iter]._id.toString() ===
+              results.book.genre[book_g_iter]._id.toString()) {
+            results.genres[all_g_iter].checked = 'true';
+          }
+        }
+      }
+
+      res.render('book_form',
+                 {title: 'Update Book',
+                  book: results.book,
+                  authors: results.authors,
+                  genres: results.genres});
+    });
 };
 
 // Handle book update on POST.
-exports.book_update_post = function(req, res) {
-    res.send('NOT IMPLEMENTED: Book update POST');
-};
+exports.book_update_post = [
+  // convert genre to an array
+  (req, res, next) => {
+    if (!(req.body.gere instanceof Array)) {
+      if (typeof req.body.genre === 'undefined') {
+        req.body.genre = [];
+      } else {
+        req.body.genre = new Array(req.body.genre);
+      }
+    }
+    next();
+  },
+
+  // Validate fields.
+  body('title', 'Title must not be empty.').isLength({ min: 1 }).trim(),
+  body('author', 'Author must not be empty.').isLength({ min: 1 }).trim(),
+  body('summary', 'Summary must not be empty.').isLength({ min: 1 }).trim(),
+  body('isbn', 'ISBN must not be empty').isLength({ min: 1 }).trim(),
+
+  // Sanitize fields.
+  sanitizeBody('title').trim().escape(),
+  sanitizeBody('author').trim().escape(),
+  sanitizeBody('summary').trim().escape(),
+  sanitizeBody('isbn').trim().escape(),
+  sanitizeBody('genre.*').trim().escape(),
+
+  // process request after validation and sanitization
+  (req, res, next) => {
+    // extract validation error from request
+    const errors = validationResult(req);
+
+    // create a book object with escaped data from old id
+    var book = {
+      title: req.body.title,
+      author: req.body.author,
+      summary: req.body.summary,
+      isbn: req.body.isbn,
+      genre: (typeof req.body.genre === 'undefined') ? [] : req.body.genre,
+      _id: req.params.id
+    }
+ 
+    if (!errors.isEmpty()) {
+      async.parallel({
+        authors: function(callback) {
+          Author.find(callback);
+        },
+
+        genres: function(callback) {
+          Genre.find(callback);
+        }
+      }, function(err, results) {
+        if (err) {
+          return next(err);
+        }
+
+        for (let i = 0; i < results.genre.length; i++) {
+          if (book.genre.indexOf(results.genres[i]._id) > -1) {
+            results.genres[i].checked = 'true';
+          }
+        }
+        res.render('book_form',
+                   {title: 'Update Book',
+                    authors: results.authors,
+                    genres: results.genres,
+                    book: book,
+                    errors: errors.array()});
+      });
+    } else {
+      Book.findByIdAndUpdate(req.params.id, book, {}, function(err, thebook) {
+        if (err) {
+          return next(err);
+        }
+        res.redirect(thebook.url);
+      });
+    }
+  }
+]
