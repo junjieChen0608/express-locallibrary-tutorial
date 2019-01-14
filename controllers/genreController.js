@@ -117,7 +117,6 @@ exports.genre_delete_get = function(req, res, next) {
       if (results.genre == null) {
         res.redirect('/catalog/authors');
       }
-      console.log('genre id' + results.genre._id);
       res.render('genre_delete.pug',
                  {title: 'Delete Genre',
                   genre: results.genre,
