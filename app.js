@@ -10,7 +10,7 @@ var helmet = require('helmet');
 const mongoose = require('mongoose');
 const userName = ""; // TODO fill it in
 const password = ""; // TODO fill it in
-const mongoDB =
+const mongoDB = process.env.MONGODB_URI ||
   `mongodb://${userName}:${password}@ds243054.mlab.com:43054/local_library`;
 mongoose.connect(mongoDB, {useNewUrlParser: true});
 mongoose.Promise = global.Promise;
